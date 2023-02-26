@@ -1,7 +1,10 @@
 ﻿import type { AxiosResponse, RequestOptions } from '@@/plugin-request/request';
 import type { RequestConfig } from '@umijs/max';
 import { message, notification } from 'antd';
+import { history } from '@umijs/max';
 import storage from './utils/storage';
+
+const loginPath = '/user/login';
 
 // 错误处理方案： 错误类型
 enum ErrorShowType {
@@ -17,9 +20,9 @@ interface ResponseStructure {
   msg: string;
   data: any;
   code: number;
-  // errorCode?: number;
-  // errorMessage?: string;
-  // showType?: ErrorShowType;
+  errorCode?: number;
+  errorMessage?: string;
+  showType?: ErrorShowType;
 }
 
 /**
@@ -28,7 +31,7 @@ interface ResponseStructure {
  * @doc https://umijs.org/docs/max/request#配置
  */
 export const errorConfig: RequestConfig = {
-  baseURL: 'http://localhost:8848',
+  baseURL: 'http://47.99.65.211:8848',
   // 错误处理： umi@3 的错误处理方案。
   errorConfig: {
     // 错误抛出
@@ -42,7 +45,7 @@ export const errorConfig: RequestConfig = {
         throw error; // 抛出自制的错误
       }
     },
-    // 错误接收及处理
+    //错误接收及处理
     errorHandler: (error: any, opts: any) => {
       if (opts?.skipErrorHandler) throw error;
       // 我们的 errorThrower 抛出的错误。
@@ -50,6 +53,8 @@ export const errorConfig: RequestConfig = {
         const errorInfo: ResponseStructure | undefined = error.info;
         if (errorInfo) {
           const { errorMessage, errorCode } = errorInfo;
+          console.log(errorMessage, errorCode);
+
           switch (errorInfo.showType) {
             case ErrorShowType.SILENT:
               // do nothing
@@ -76,6 +81,7 @@ export const errorConfig: RequestConfig = {
       } else if (error.response) {
         // Axios 的错误
         // 请求成功发出且服务器也响应了状态码，但状态代码超出了 2xx 的范围
+        if (error.response.status === 401) history.push(loginPath);
         message.error(`Response status:${error.response.status}`);
       } else if (error.request) {
         // 请求已经成功发起，但没有收到响应
@@ -93,7 +99,9 @@ export const errorConfig: RequestConfig = {
   requestInterceptors: [
     (config: RequestOptions) => {
       // 拦截请求配置，进行个性化处理。
-      // config.headers.Authorization =
+      const token = storage.get('token');
+      const { location } = history;
+      if (config.headers && location.pathname !== loginPath) config.headers.token = token;
       return config;
     },
   ],
@@ -101,14 +109,6 @@ export const errorConfig: RequestConfig = {
   // 响应拦截器
   responseInterceptors: [
     (response: AxiosResponse) => {
-      // 拦截响应数据，进行个性化处理
-      // const data = response.data?.data;
-      // console.log(response.headers);
-
-      if (response.headers.token) {
-        const token = response.headers.token;
-        storage.set('token', token);
-      }
       return response;
     },
   ],

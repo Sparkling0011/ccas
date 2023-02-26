@@ -1,7 +1,7 @@
 // @ts-ignore
 /* eslint-disable */
 
-declare namespace AaPI {
+declare namespace API {
   type CurrentUser = {
     name?: string;
     avatar?: string;
@@ -29,7 +29,11 @@ declare namespace AaPI {
     // currentAuthority?: string;
     mag: string;
     code: number;
-    data: object;
+    data: {
+      token: string;
+      user: object;
+      userPerms: [];
+    };
   };
 
   type PageParams = {
@@ -62,15 +66,6 @@ declare namespace AaPI {
   type FakeCaptcha = {
     code?: number;
     status?: string;
-  };
-
-  type LoginParams = {
-    username?: string;
-    password?: string;
-    // autoLogin?: boolean;
-    // type?: string;
-    verifyCode: string;
-    verifyInput: string;
   };
 
   type ErrorResponse = {

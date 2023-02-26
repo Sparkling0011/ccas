@@ -23,6 +23,15 @@ declare namespace API {
     phone?: string;
   };
 
+  type LoginParams = {
+    username?: string;
+    password?: string;
+    // autoLogin?: boolean;
+    // type?: string;
+    verifyCode: string;
+    verifyInput: string;
+  };
+
   type VerifyParams = {
     token?: string;
   };
@@ -37,6 +46,35 @@ declare namespace API {
     code: number;
     msg: string;
     data: object;
+  };
+
+  type TeacherItem = {
+    tid: number;
+    tecId: string;
+    tecName: string;
+    tecGender: string;
+    tecBirth: Date;
+  };
+  type StudentItem = {
+    sid: number;
+    stuId: string;
+    stuName: string;
+    stuGender: string;
+    stuBirth: Date;
+  };
+
+  type CourseItem = {
+    courseId: string;
+    courseName: string;
+  };
+
+  type ClassItem = {
+    classId: string;
+    coID: string;
+  };
+
+  type UploadInfoType = {
+    file: File;
   };
 
   type PageParams = {

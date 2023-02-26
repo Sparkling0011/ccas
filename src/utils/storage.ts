@@ -6,7 +6,7 @@ class storage {
   }
   set(key: any, value: any) {
     if (!key || !value) return;
-    localStorage.setItem(key.toString, JSON.stringify(value));
+    localStorage.setItem(key.toString(), JSON.stringify(value));
   }
   remove(key: string) {
     if (!key) return;

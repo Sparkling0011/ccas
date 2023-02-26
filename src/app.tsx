@@ -1,17 +1,14 @@
 import Footer from '@/components/Footer';
 import RightContent from '@/components/RightContent';
-import { LinkOutlined } from '@ant-design/icons';
 import { PageLoading, Settings as LayoutSettings } from '@ant-design/pro-components';
 import { SettingDrawer } from '@ant-design/pro-components';
 import type { RunTimeLayoutConfig } from '@umijs/max';
-import { history, Link } from '@umijs/max';
+import { history } from '@umijs/max';
 import defaultSettings from '../config/defaultSettings';
 import { errorConfig } from './requestErrorConfig';
-import { currentUser as queryCurrentUser } from './services/swagger/api';
+import storage from './utils/storage';
 
-// import storage from './utils/storage';
-
-const isDev = process.env.NODE_ENV === 'development';
+// const isDev = process.env.NODE_ENV === 'development';
 const loginPath = '/user/login';
 
 /**
@@ -19,26 +16,23 @@ const loginPath = '/user/login';
  * */
 export async function getInitialState(): Promise<{
   settings?: Partial<LayoutSettings>;
-  currentUser?: API.CurrentUser;
+  currentUser?: { nickname: string };
   loading?: boolean;
-  fetchUserInfo?: () => Promise<API.CurrentUser | undefined>;
+  fetchUserInfo?: () => Promise<{ currentUser: object; token: string }>;
 }> {
   const fetchUserInfo = async () => {
-    try {
-      const msg = await queryCurrentUser({
-        skipErrorHandler: true,
-      });
-      return msg.data;
-    } catch (error) {
-      history.push(loginPath);
-    }
-    return undefined;
+    const currentUser = storage.get('user');
+    const token = storage.get('token');
+    return {
+      currentUser,
+      token,
+    };
   };
   //如果不是登录页面，执行
   // if (window.location.pathname !== loginPath) {
-  //   const currentUser = await fetchUserInfo();
+  //   const { currentUser, token } = await fetchUserInfo();
   //   return {
-  //     fetchUserInfo,
+  //     token,
   //     currentUser,
   //     settings: defaultSettings,
   //   };
@@ -58,11 +52,11 @@ export const layout: RunTimeLayoutConfig = ({ initialState, setInitialState }) =
     },
     footerRender: () => <Footer />,
     onPageChange: () => {
-      // const { location } = history;
-      // 如果没有登录，重定向到 login
-      // if (!storage.get('token') && location.pathname !== loginPath) {
-      //   history.push(loginPath);
-      // }
+      const { location } = history;
+      //如果没有登录，重定向到 login
+      if (!storage.get('token') && location.pathname !== loginPath) {
+        history.push(loginPath);
+      }
     },
     layoutBgImgList: [
       {
@@ -84,14 +78,6 @@ export const layout: RunTimeLayoutConfig = ({ initialState, setInitialState }) =
         width: '331px',
       },
     ],
-    links: isDev
-      ? [
-          <Link key="openapi" to="/umi/plugin/openapi" target="_blank">
-            <LinkOutlined />
-            <span>OpenAPI 文档</span>
-          </Link>,
-        ]
-      : [],
     menuHeaderRender: undefined,
     // 自定义 403 页面
     // unAccessible: <div>unAccessible</div>,

@@ -1,6 +1,6 @@
 import Footer from '@/components/Footer';
-// import { login } from '@/services/ant-design-pro/api';
-import { getVerifyCode, login } from '@/services/swagger/api';
+import { getVerifyCode, login } from '@/services/api';
+import storage from '@/utils/storage';
 import {
   AlipayCircleOutlined,
   LockOutlined,
@@ -13,7 +13,7 @@ import { LoginForm, ProFormCheckbox, ProFormText } from '@ant-design/pro-compone
 import { history, useModel } from '@umijs/max';
 import { Alert, message, Tabs, Col, Row } from 'antd';
 import React, { useEffect, useState } from 'react';
-// import { flushSync } from 'react-dom';
+import { flushSync } from 'react-dom';
 import styles from './index.less';
 const LoginMessage: React.FC<{
   content: string;
@@ -36,55 +36,22 @@ const Login: React.FC = () => {
   const [imageData, SetImageData] = useState<string>('');
   const [vcData, SetVCData] = useState<string>('');
 
-  const { setInitialState } = useModel('@@initialState');
+  const { initialState, setInitialState } = useModel('@@initialState');
 
-  // const fetchUserInfo = async () => {
-  //   const userInfo = await initialState?.fetchUserInfo?.();
-  //   if (userInfo) {
-  //     flushSync(() => {
-  //       setInitialState((s) => ({
-  //         ...s,
-  //         currentUser: userInfo,
-  //       }));
-  //     });
-  //   }
-  // };
-
-  const handleSubmit = async (values: API.LoginParams) => {
-    try {
-      // 登录
-      const { username, password, verifyInput } = values;
-      const msg = await login({
-        username,
-        password,
-        verifyInput,
-        verifyCode: vcData,
-      });
-      console.log(msg);
-      if (msg.code === 200) {
-        const defaultLoginSuccessMessage = '登录成功!';
-        message.success(defaultLoginSuccessMessage);
+  const getUserInfo = async () => {
+    if (initialState?.fetchUserInfo) {
+      const { currentUser, token } = await initialState.fetchUserInfo?.();
+      flushSync(() => {
         setInitialState((s) => ({
           ...s,
-          currentUser: msg.data.user,
+          currentUser,
+          token,
         }));
-        // await fetchUserInfo();
-        const urlParams = new URL(window.location.href).searchParams;
-        history.push(urlParams.get('redirect') || '/');
-        return;
-      }
-      console.log(msg);
-      // 如果失败去设置用户错误信息
-      setUserLoginState(msg);
-    } catch (error) {
-      console.log('error', error);
-      const defaultLoginFailureMessage = '登录失败，请重试！';
-      console.log(error);
-      message.error(defaultLoginFailureMessage);
+      });
     }
   };
-  const { code, type: loginType } = userLoginState;
 
+  //获取验证码信息
   const resetImageData = async () => {
     const data = await getVerifyCode({});
     const { img, vc } = data.data;
@@ -96,8 +63,40 @@ const Login: React.FC = () => {
     async function fetchData() {
       await resetImageData();
     }
+    // history.push('/');
     fetchData();
   }, []);
+
+  const handleSubmit = async (values: API.LoginParams) => {
+    try {
+      // 登录
+      const { username, password, verifyInput } = values;
+      const { code, data } = await login({
+        username,
+        password,
+        verifyInput,
+        verifyCode: vcData,
+      });
+      if (code === 200) {
+        const defaultLoginSuccessMessage = '登录成功!';
+        message.success(defaultLoginSuccessMessage);
+        storage.set('token', data.token);
+        storage.set('currentUser', data.user);
+        getUserInfo();
+        const urlParams = new URL(window.location.href).searchParams;
+        history.push(urlParams.get('redirect') || '/');
+        return;
+      }
+      // 如果失败去设置用户错误信息
+      setUserLoginState(msg);
+    } catch (error) {
+      console.log('error', error);
+      const defaultLoginFailureMessage = '登录失败，请重试！';
+      console.log(error);
+      message.error(defaultLoginFailureMessage);
+    }
+  };
+  const { code, type: loginType } = userLoginState;
 
   return (
     <div className={styles.container}>
